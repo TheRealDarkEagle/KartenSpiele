@@ -9,22 +9,28 @@ import java.util.Random;
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane.MaximizeAction;
 
 public class MauMau {
-	//Ändern -> deck soll auch zu einem Typ CardHolder werden!
-	private ArrayList<Karte> deck = new ArrayList<Karte>();
+	
+	private CardContainer deck;
+	private CardContainer playedCards;
 	
 	public void initialisiereGame(int maxPlayer) {
+		if(maxPlayer<2) {
+			CardContainer[] player = new CardContainer[maxPlayer+1];
+			prepareGame(player);
+		}else {
+			CardContainer[] player = new CardContainer[maxPlayer];
+			prepareGame(player);
+		}
 		
-		CardContainer[] player = new CardContainer[maxPlayer];
-		prepareGame(player);
 	}
 			
 		
 		private void prepareGame(CardContainer[] player) {
 			CardContainer deck = new CardContainer();
-			for(int i = 0 ; i <= player.length % 4 ; i++) {
-				deck = getDeck(deck);
+			for(int i = 1 ; i < player.length % 4 ; i++) {
+				deck.getDeck();
 			}
-			deck = shuffleDeck(deck);
+			this.deck = shuffleDeck(deck);
 			startGame(player);
 	}
 
@@ -33,12 +39,21 @@ public class MauMau {
 		
 
 	private void startGame(CardContainer[] player) {
-		drawInitialCards();
-		ArrayList<Karte> playedCards = new ArrayList<Karte>();
-		playedCards.add(deck.get(0));
-		deck.remove(0);
-		int won = playGame(playedCards, player);
-		System.out.println("Herzlichen Glückwunsch Spieler"+won);
+		//TODO nicht funktionsfähig
+		System.out.println("start");
+		System.out.println("size: " +deck.sizeHolder());
+		int counter = 0;
+		System.out.println("mittendrin");
+		for(int a = 0 ; a <=5;a++) {
+			for(int i=0; i < player.length-1;i++) {
+				//Fehler tritt hier auf 
+				player[i].takeCard(deck.playTopCard());
+				System.out.println(counter);
+				counter++;
+			}
+		}
+		playGame(player);
+		System.out.println("Herzlichen Glückwunsch Spieler");
 		System.out.println("Nochmal spielen? y/n");
 		String again = input(player[0]);
 		if(again.contains("y")) {
@@ -49,12 +64,11 @@ public class MauMau {
 		}
 	}
 
-	private int playGame(ArrayList<Karte> playedCards, CardContainer[] player) {
-		boolean firstRound = true;
-		int counter = 0;     
+	private void playGame(CardContainer[] player) {
+		int round = 1;     
 		boolean win = false;
+		boolean cardEffeckt = false;
 		drawTopCard(deck, playedCards);
-		removeTopCard(deck);
 		//Solange handkarten nicht = 0 
 		//spiele 
 		//
@@ -76,10 +90,14 @@ public class MauMau {
 		 */
 			while(!win) {
 				for(int i = 0 ; i < player.length-1 ; i++) {
-					if(!firstRound) {
+					if(round >1) {
+						ausgabeDerHand(player[i]);
+						isHandPlayable(playedCards.seeCard(0), player[i]);
 						
+						//Schaue zuletzt gespielte karte an 
+						//Wenn 7 oder 8 dann tu etwas -> 7 = 2x ziehen 8 = aussetzen
 					}else {
-						playedCards.add(0, player[i].playCard());
+						playedCards.takeCard(player[i].playCard());
 					}
 				}
 				
@@ -103,16 +121,8 @@ public class MauMau {
 				 * Gegenspieler wahrscheinlich eher ziehen muss, anstatt eine Karte aus seiner Hand zu spielen
 				 */
 				
-				if(player.size()==0) {
-					return 2;
-				}
-				if(counter==player.length-1) {
-					counter = 0;
-				}else {
-					counter++;
-				}
+				round++;
 			}
-			return counter;
 	}
 	
 
@@ -128,13 +138,13 @@ public class MauMau {
 	}
 
 	//Methode um eine Karte auszuwählen, welche man spielen möchte
-	private void playCard(ArrayList<Karte> playedCards,CardContainer player) {
+	private void playCard(CardContainer playedCards,CardContainer player) {
 		System.out.println("Bitte geben Sie ihre zu spielende Karte ein!");
 		int cardToPlay = Integer.valueOf(input(player).replaceAll("[^1-9]", ""))-1;
-		if(player.seeCard(cardToPlay).getWert().equals(playedCards.get(0).getWert()) || 
-		   player.seeCard(cardToPlay).toString().equals(playedCards.get(0).toString()) ||
+		if(player.seeCard(cardToPlay).getWert().equals(playedCards.seeCard(0).getWert()) || 
+		   player.seeCard(cardToPlay).toString().equals(playedCards.seeCard(0).toString()) ||
 		   player.seeCard(cardToPlay).getWert().contains("Bube")) {
-				playedCards.add(0, player.playCard(cardToPlay));
+				playedCards.takeCard(player.playCard());
 		}else {
 			System.out.println("Bitte wählen Sie eine Karte aus dessen Wert ODER Symbol übereinstimmen");
 			playCard(playedCards,player);
@@ -144,47 +154,45 @@ public class MauMau {
 		
 	}
 
-	private String input(CardContainer spieler) {
+	private String input(CardContainer player) {
 		InputStreamReader isr = new InputStreamReader(System.in);
 		BufferedReader br = new BufferedReader(isr);
 		String input = "";
 		try {
 			input = br.readLine();
 		} catch (IOException e) {
-			System.out.println("Bitte wählen Sie eine Karte zwischen 1 und "+ spieler.sizeHolder()+" aus!" );
-			input(spieler);
+			System.out.println("Bitte wählen Sie eine Karte zwischen 1 und " + player.sizeHolder() +" aus!" );
+			input(player);
 		}
 		return input;
 	}
 
 	//Spieler zieht 6 Karten 
-	private void drawInitialCards() {
-		while(hand.size()<6) {
-			drawTopCard(deck,hand);
-			drawTopCard(deck,hand2);
+	private void drawInitialCards(CardContainer[] player) {
+		while(player[0].sizeHolder()<6) {
+			for(int i = 0 ; i < player.length-1;i++) {
+				drawTopCard(deck,player[i]);
+			}
+			
 		}
 	}
 
-	//Entfernt die oberste Karte vom Deck
-	private ArrayList<Karte> removeTopCard(ArrayList<Karte> deck) {
-		deck.remove(0);
-		return deck;
-	}
-
 	//Spieler zieht die oberste Karte vom Deck 
-	private ArrayList<Karte> drawTopCard(ArrayList<Karte> deck, ArrayList<Karte> hand) {
-		hand.takeCard(deck.get(0));
-		deck.remove(deck.get(0));
-		return hand;
+	private void drawTopCard(CardContainer takesCard, CardContainer givesCard) {
+		takesCard.takeCard(givesCard.playTopCard());
 	}
 
 	//Gibt dem Spieler seine Handkarten auf dem Bildschirm aus
 	private void ausgabeDerHand(CardContainer spieler) {
 		int counter = 1;
-		for(Karte k:spieler) {
-			System.out.println("Karte "+counter +": "+k.getKarte());
-			counter++;
+		for(int i = 0 ; i < spieler.sizeHolder(); i++) {
+			System.out.println("karte " + i+1 + ": " + spieler.seeCard(i));
 		}
+		
+//		for(Karte k: spieler) {
+//			System.out.println("Karte "+counter +": "+k.getKarte());
+//			counter++;
+//		}
 		
 	}
 
@@ -196,7 +204,8 @@ public class MauMau {
 			int randomNumber =  new Random().nextInt(deck.sizeHolder())+0;
 			if(!alreadyAddedCards.contains(randomNumber)) {
 				alreadyAddedCards.add(randomNumber);
-				shuffledDeck.takeCard((deck.playCard(randomNumber)));
+				shuffledDeck.takeCard(deck.seeCard(randomNumber));
+				System.out.println(randomNumber);
 			}else {
 				a++;
 			}
@@ -205,42 +214,7 @@ public class MauMau {
 		return deck;
 	}
 
-	//Erstellt ein Deck mit 32 Karten -> 7-As 1x je Symbol 
-	private CardContainer getDeck(CardContainer deck){
-		deck.takeCard((new Karte("7", "HERZ")));
-		deck.takeCard((new Karte("8", "HERZ")));
-		deck.takeCard((new Karte("9", "HERZ")));
-		deck.takeCard((new Karte("10", "HERZ")));
-		deck.takeCard((new Karte("Bube", "HERZ")));
-		deck.takeCard((new Karte("Dame", "HERZ")));
-		deck.takeCard((new Karte("König", "HERZ")));
-		deck.takeCard((new Karte("As", "HERZ")));
-		deck.takeCard((new Karte("7", "KARO")));
-		deck.takeCard((new Karte("8", "KARO")));
-		deck.takeCard((new Karte("9", "KARO")));
-		deck.takeCard((new Karte("10", "KARO")));
-		deck.takeCard((new Karte("Bube", "KARO")));
-		deck.takeCard((new Karte("Dame", "KARO")));
-		deck.takeCard((new Karte("König", "KARO")));
-		deck.takeCard((new Karte("As", "KARO")));
-		deck.takeCard((new Karte("7", "SCHIPPE")));
-		deck.takeCard((new Karte("8", "SCHIPPE")));
-		deck.takeCard((new Karte("9", "SCHIPPE")));
-		deck.takeCard((new Karte("10", "SCHIPPE")));
-		deck.takeCard((new Karte("Bube", "SCHIPPE")));
-		deck.takeCard((new Karte("Dame", "SCHIPPE")));
-		deck.takeCard((new Karte("König", "SCHIPPE")));
-		deck.takeCard((new Karte("As", "SCHIPPE")));
-		deck.takeCard((new Karte("7", "KREUZ")));
-		deck.takeCard((new Karte("8", "KREUZ")));
-		deck.takeCard((new Karte("9", "KREUZ")));
-		deck.takeCard((new Karte("10", "KREUZ")));
-		deck.takeCard((new Karte("Bube", "KREUZ")));
-		deck.takeCard((new Karte("Dame", "KREUZ")));
-		deck.takeCard((new Karte("König", "KREUZ")));
-		deck.takeCard((new Karte("As", "KREUZ")));
-		return deck;
-	}
+	
 
 	
 	
