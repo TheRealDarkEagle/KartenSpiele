@@ -30,8 +30,6 @@ public class CardContainer {
 	 * Karte aufnehmen 
 	 */
 	public void takeCard(Karte karte) {
-		System.out.println(karte.getKarte());
-		System.out.println("test");
 		hand.add(0, karte);
 	}
 	
